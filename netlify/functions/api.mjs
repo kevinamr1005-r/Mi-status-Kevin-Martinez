@@ -48,6 +48,18 @@ export default async (req) => {
 
     if (path === "huella") return json({ registrada: (await creds()).length > 0 });
 
+    if (path === "huellas") {
+      if (!ok) return json({ error: "No autorizado" }, 401);
+      return json((await creds()).map((c, i) => ({ id: c.id, nombre: c.nombre || "Huella " + (i + 1), fecha: c.fecha || "" })));
+    }
+
+    if (path === "huella-del") {
+      if (!ok) return json({ error: "No autorizado" }, 401);
+      const rest = (await creds()).filter((c) => c.id !== url.searchParams.get("id"));
+      await store.setJSON("cred", rest);
+      return json({ ok: true, quedan: rest.length });
+    }
+
     if (path === "reg-options") {
       if (!ok) return json({ error: "No autorizado" }, 401);
       const cs = await creds();
@@ -71,7 +83,7 @@ export default async (req) => {
       if (!v.verified) return json({ error: "No verificado" }, 400);
       const c = v.registrationInfo.credential;
       const cs = await creds();
-      cs.push({ id: c.id, publicKey: Buffer.from(c.publicKey).toString("base64url"), counter: c.counter, transports: c.transports || [] });
+      cs.push({ id: c.id, publicKey: Buffer.from(c.publicKey).toString("base64url"), counter: c.counter, transports: c.transports || [], nombre: (url.searchParams.get("n") || "Dispositivo").slice(0, 40), fecha: new Date().toISOString() });
       await store.setJSON("cred", cs);
       return json({ ok: true });
     }
