@@ -89,6 +89,9 @@ input,select,textarea{border:1px solid #cdd3e6;border-radius:10px;padding:9px 12
 .md:has(.lg){max-width:380px}.lg{text-align:center}.lg .lk{width:56px;height:56px;border-radius:50%;background:#e8edff;color:var(--blue);display:grid;place-items:center;margin:0 auto 14px}.lg input{text-align:center;font-size:22px;letter-spacing:6px;margin-top:18px}.lg .ac{justify-content:center}.pe{color:#c42b2b;font-size:13px;min-height:18px;margin-top:8px}
 .edit+.edit{margin-top:8px}.big{width:100%;margin-top:16px;padding:12px;border-radius:10px;border:0;background:var(--blue);color:#fff;font-weight:600}
 .fl{display:block;font-size:13px;color:var(--mut);margin-top:12px}.hrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.tm{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.tm input{padding:7px 6px;font-size:14px}.day.sel{box-shadow:0 0 0 2px var(--amber)}
+.md:has(.cal){max-width:340px}.cal .ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;text-transform:capitalize}.cal .ch button{border:0;background:none;font-size:20px;padding:4px 14px;border-radius:8px}.cal .ch button:hover,.cd:hover{background:#e8edff}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}.cg i{font-style:normal;font-size:12px;color:var(--mut);padding:4px 0}.cd{border:0;background:none;border-radius:8px;padding:9px 0}.cd.of{color:#b3b9d1}.cd.sw{background:#eef1ff}.cd.td{font-weight:700;color:var(--blue);outline:1px solid var(--blue)}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;z-index:10}
 #toast:empty{display:none}
 @media(max-width:820px){
@@ -126,6 +129,12 @@ const mon=d=>add(d,-((d.getDay()+6)%7));
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
 const opts=(o,s)=>Object.entries(o).map(([k,v])=>`<option value="${k}" ${k==s?'selected':''}>${v}</option>`).join('');
+const DEF={M:['06:00','15:00'],T:['15:00','00:00']};
+const tn=s=>{const v=S.db.turnos[s];if(!v)return null;if(typeof v=='string')return v=='D'?{t:'D',ini:'',fin:''}:{t:v,ini:DEF[v][0],fin:DEF[v][1]};return v};
+const mins=v=>{if(!v||v.t=='D'||!v.ini||!v.fin)return 0;const f=x=>+x.slice(0,2)*60+ +x.slice(3,5);let d=f(v.fin)-f(v.ini);if(d<=0)d+=1440;return d};
+const hr=m=>String(Math.round(m/6)/10);
+const tTxt=v=>!v?'':v.t=='D'?'Descanso':TURNO[v.t][0]+' '+v.ini+'–'+v.fin;
+const m3=d=>MES[d.getMonth()].slice(0,3);
 const corto=s=>{const d=P(s);return d.getDate()+' '+MES[d.getMonth()].slice(0,3)};
 
 let S={v:'resumen',wk:mon(new Date()),q:'',fe:'',fp:'',edit:!!(sessionStorage.pin||sessionStorage.tok),huella:0,api:0,
@@ -159,15 +168,20 @@ function toggleEdit(){
  const i=$('pin');i.onkeydown=e=>{if(e.key=='Enter')login()};
  if(h)huellaEntrar();else i.focus();
 }
-async function huellaEntrar(){
+async function huellaEntrar(n=1){
+ if(S.busy)return;S.busy=1;
  try{
   const r0=await fetch('/api/auth-options',{method:'POST'});if(!r0.ok)throw 0;
   const o=await r0.json();o.challenge=u2b(o.challenge);(o.allowCredentials||[]).forEach(c=>c.id=u2b(c.id));
   const a=await navigator.credentials.get({publicKey:o}),R=a.response;
   const body={id:a.id,rawId:b2u(a.rawId),type:a.type,clientExtensionResults:{},response:{clientDataJSON:b2u(R.clientDataJSON),authenticatorData:b2u(R.authenticatorData),signature:b2u(R.signature),userHandle:R.userHandle?b2u(R.userHandle):undefined}};
   const r=await fetch('/api/auth-verify',{method:'POST',body:JSON.stringify(body)});if(!r.ok)throw 0;
-  sessionStorage.tok=(await r.json()).token;S.edit=true;closeM();render();
- }catch(e){const p=$('pe');if(p){p.textContent='No se pudo usar la huella. Escribe tu PIN.';$('pin').focus()}}
+  sessionStorage.tok=(await r.json()).token;S.busy=0;S.edit=true;closeM();render();
+ }catch(e){
+  S.busy=0;const p=$('pe');if(!p)return;
+  if(n<3){p.textContent='No se reconoció la huella. Intento '+(n+1)+' de 3: limpia el lector y vuelve a intentarlo.';setTimeout(()=>{if($('pe'))huellaEntrar(n+1)},1200)}
+  else{p.textContent='No se pudo con la huella. Toca "Entrar con huella" para intentarlo de nuevo o escribe tu PIN.';$('pin').focus()}
+ }
 }
 async function huellaRegistrar(){
  try{
@@ -218,8 +232,21 @@ async function login(){
  sessionStorage.pin=p;S.edit=true;closeM();render();
 }
 function go(v){S.v=v;render()}
-function wk(n){S.wk=n?add(S.wk,7*n):mon(new Date());render()}
-const wkNav=()=>{const a=S.wk,b=add(a,6);return `<div class="wn"><button onclick="wk(-1)" aria-label="Semana anterior">‹</button><b>${a.getDate()}–${b.getDate()} ${MES[b.getMonth()].slice(0,3)}</b><button onclick="wk(1)" aria-label="Semana siguiente">›</button><button onclick="wk(0)">Hoy</button></div>`};
+function wk(n){S.wk=n?add(S.wk,7*n):mon(new Date());S.sel='';render()}
+function calOpen(){S.cal=new Date(S.wk.getFullYear(),S.wk.getMonth(),1);calDraw()}
+function calMove(n){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()+n,1);calDraw()}
+function calDraw(){
+ const c=S.cal,y=c.getFullYear(),m=c.getMonth(),ini=mon(new Date(y,m,1)),hoy=iso(new Date()),wa=iso(S.wk),we=iso(add(S.wk,6));
+ let g='';
+ for(let i=0;i<42;i++){const d=add(ini,i),s=iso(d);if(i&&i%7==0&&d.getMonth()!=m)break;
+  g+=`<button type="button" class="cd ${d.getMonth()!=m?'of':''} ${s==hoy?'td':''} ${s>=wa&&s<=we?'sw':''}" onclick="pick('${s}')">${d.getDate()}</button>`}
+ modal(`<div class="cal"><div class="ch"><button type="button" onclick="calMove(-1)" aria-label="Mes anterior">‹</button><b>${MES[m]} ${y}</b><button type="button" onclick="calMove(1)" aria-label="Mes siguiente">›</button></div>
+ <div class="cg">${['L','M','X','J','V','S','D'].map(x=>`<i>${x}</i>`).join('')}${g}</div>
+ <p class="sub" style="margin-top:10px">Toca un día para ir a su semana.</p>
+ <div class="ac"><button type="button" class="pr" onclick="pick('${hoy}')">Ir a hoy</button><button type="button" onclick="closeM()">Cerrar</button></div></div>`);
+}
+function pick(s){S.wk=mon(P(s));S.sel=s==iso(new Date())?'':s;closeM();render()}
+const wkNav=()=>{const a=S.wk,b=add(a,6);return `<div class="wn"><button onclick="wk(-1)" aria-label="Semana anterior">‹</button><b>${a.getDate()} ${m3(a)} – ${b.getDate()} ${m3(b)} ${b.getFullYear()}</b><button onclick="wk(1)" aria-label="Semana siguiente">›</button><button onclick="calOpen()">Hoy ▾</button></div>`};
 
 function items(s){
  const a=S.db.acts.filter(x=>x.fecha==s);
@@ -228,7 +255,7 @@ function items(s){
 }
 function stats(){
  const days=[...Array(7)].map((_,i)=>iso(add(S.wk,i)));
- const h=days.reduce((a,s)=>a+(S.db.turnos[s]=='M'||S.db.turnos[s]=='T'?9:0),0);
+ const h=Math.round(days.reduce((a,s)=>a+mins(tn(s)),0)/6)/10;
  const incs=S.db.incs.filter(i=>days.includes(i.fecha));
  const acts=S.db.acts.filter(a=>days.includes(a.fecha)&&a.tipo!='nov');
  const cap=acts.filter(a=>a.tipo=='capacitacion').reduce((x,a)=>x+(+a.dur||0),0);
@@ -246,12 +273,12 @@ const VIEWS={
 resumen(){
  const t=stats(),hoy=iso(new Date()),n=new Date(),hh=n.getHours();
  const sal=hh<12?'Buenos días':hh<19?'Buenas tardes':'Buenas noches';
- const tr=S.db.turnos[hoy],mx=Math.max(1,...t.days.map(s=>items(s).filter(x=>x.tipo!='nov').length));
+ const tr=tn(hoy),mx=Math.max(1,...t.days.map(s=>items(s).filter(x=>x.tipo!='nov').length));
  const pend=S.db.incs.filter(i=>i.estado!='Resuelta');
  const hoyIt=items(hoy);
  return `<div class="hero"><div><div class="sub" style="color:#aab4d6">${DIAS[(n.getDay()+6)%7]} ${n.getDate()} de ${MES[n.getMonth()]}</div>
  <h1>${sal}, ${esc(S.db.meta.nombre)}</h1>
- <div class="chips"><span class="chip">Turno de hoy: ${tr?TURNO[tr][0]+' '+TURNO[tr][1]:'sin asignar'}</span><span class="chip">${S.db.incs.length} incidencias en total</span></div></div>${wkNav()}</div>
+ <div class="chips"><span class="chip">Turno de hoy: ${tr?tTxt(tr):'sin asignar'}</span><span class="chip">${S.db.incs.length} incidencias en total</span></div></div>${wkNav()}</div>
  <div class="grid g4">
  <div class="card kpi"><small>Horas de la semana</small><strong>${t.h}<span> / ${S.db.meta.metaH} h</span></strong><div class="pb"><div style="width:${pct(t.h,S.db.meta.metaH)}%;--c:var(--amber)"></div></div></div>
  <div class="card kpi"><small>Incidencias resueltas</small><strong>${t.res}<span> / ${t.incs.length}</span></strong><div class="pb"><div style="width:${pct(t.res,t.incs.length)}%;--c:var(--green)"></div></div></div>
@@ -265,10 +292,10 @@ resumen(){
 bitacora(){
  const hoy=iso(new Date());
  return `<div class="top"><div><h1>Bitácora</h1><p class="sub">Todo lo que hiciste cada día de la semana.</p></div>${wkNav()}</div>
- <div class="grid g7">${[...Array(7)].map((_,i)=>{const s=iso(add(S.wk,i)),tr=S.db.turnos[s],it=items(s);
- return `<div class="card day ${s==hoy?'hoy':''}"><h3>${DIAS[i]}<span class="sub">${corto(s)}</span></h3>
- ${tr?`<span class="tag">${TURNO[tr][0]} ${TURNO[tr][1]}</span>`:''}
- ${it.length?it.map(item).join(''):`<p class="empty">${tr=='D'?'Descanso':'Sin actividades'}</p>`}
+ <div class="grid g7">${[...Array(7)].map((_,i)=>{const s=iso(add(S.wk,i)),tr=tn(s),it=items(s);
+ return `<div class="card day ${s==hoy?'hoy':''} ${s==S.sel?'sel':''}"><h3>${DIAS[i]}<span class="sub">${corto(s)}</span></h3>
+ ${tr?`<span class="tag">${tTxt(tr)}</span>`:''}
+ ${it.length?it.map(item).join(''):`<p class="empty">${tr&&tr.t=='D'?'Descanso':'Sin actividades'}</p>`}
  ${S.edit?`<button class="mini" onclick="actForm('${s}')">+ Actividad</button><button class="mini" onclick="incForm('','${s}')">+ Incidencia</button>${it.length?'':`<button class="mini" onclick="nov('${s}')">Día sin novedad</button>`}`:''}</div>`}).join('')}</div>`;
 },
 incs(){
@@ -279,17 +306,18 @@ incs(){
  <button class="mini" style="margin:0" onclick="csv()">Exportar CSV</button></div><div id="il" class="grid"></div>`;
 },
 turnos(){
- const t=stats(),m=S.db.meta.metaH,hoy=iso(new Date()),d=t.days.filter(s=>S.db.turnos[s]=='D').length;
- return `<div class="top"><div><h1>Mis turnos</h1><p class="sub">Horas y descansos de la semana.</p></div>${wkNav()}</div>
+ const t=stats(),m=S.db.meta.metaH,hoy=iso(new Date()),d=t.days.filter(s=>tn(s)&&tn(s).t=='D').length,w=t.days.filter(s=>mins(tn(s))>0).length,dif=+(t.h-m).toFixed(1);
+ return `<div class="top"><div><h1>Mis turnos</h1><p class="sub">Anota la hora real de entrada y salida de cada día.</p></div>${wkNav()}</div>
  <div class="grid g4" style="margin-bottom:14px">
- <div class="card kpi"><small>Horas de la semana</small><strong>${t.h}<span> / ${m} h</span></strong><div class="pb"><div style="width:${pct(t.h,m)}%;--c:var(--amber)"></div></div><small>${t.h>=m?(t.h-m)+' h sobre la meta':(m-t.h)+' h para la meta'}</small>${S.edit?' <button class="mini" style="margin:6px 0 0" onclick="meta()">Cambiar meta</button>':''}</div>
- <div class="card kpi"><small>Días trabajados</small><strong>${t.days.filter(s=>['M','T'].includes(S.db.turnos[s])).length}<span> días</span></strong></div>
+ <div class="card kpi"><small>Horas de la semana</small><strong>${t.h}<span> / ${m} h</span></strong><div class="pb"><div style="width:${pct(t.h,m)}%;--c:var(--amber)"></div></div><small>${dif>=0?dif+' h sobre la meta':(-dif)+' h para la meta'}</small>${S.edit?' <button class="mini" style="margin:6px 0 0" onclick="meta()">Cambiar meta</button>':''}</div>
+ <div class="card kpi"><small>Días trabajados</small><strong>${w}<span> días</span></strong></div>
  <div class="card kpi"><small>Descansos</small><strong>${d}<span> días</span></strong></div></div>
  ${S.edit?'<button class="mini" style="margin:0 0 14px" onclick="plan()">Aplicar mi rotación a esta semana</button>':''}
- <div class="grid g7">${t.days.map((s,i)=>{const tr=S.db.turnos[s];
- return `<div class="card day ${s==hoy?'hoy':''}"><h3>${DIAS[i]}<span class="sub">${corto(s)}</span></h3>
- ${S.edit?`<select onchange="setT('${s}',this.value)"><option value="">Sin asignar</option>${opts({M:'Mañana 06:00–15:00',T:'Tarde 15:00–00:00',D:'Descanso'},tr)}</select>`:
- tr?`<p style="font-size:20px;font-weight:700;margin-top:8px">${tr=='D'?'Descanso':TURNO[tr][1]}</p><span class="tag">${TURNO[tr][0]}${tr!='D'?' · 9 h':''}</span>`:'<p class="empty">Sin asignar</p>'}</div>`}).join('')}</div>`;
+ <div class="grid g7">${t.days.map((s,i)=>{const v=tn(s),h=mins(v);
+ return `<div class="card day ${s==hoy?'hoy':''} ${s==S.sel?'sel':''}"><h3>${DIAS[i]}<span class="sub">${corto(s)}</span></h3>
+ ${S.edit?`<select onchange="setT('${s}',this.value)"><option value="">Sin asignar</option>${opts({M:'Mañana',T:'Tarde',D:'Descanso'},v&&v.t)}</select>
+ ${v&&v.t!='D'?`<div class="tm"><label class="fl" style="margin:0">Entrada<input type="time" value="${v.ini}" onchange="setH('${s}','ini',this.value)"></label><label class="fl" style="margin:0">Salida<input type="time" value="${v.fin}" onchange="setH('${s}','fin',this.value)"></label></div><p class="sub" style="margin-top:6px">${hr(h)} h</p>`:''}`:
+ v?(v.t=='D'?'<p style="font-size:20px;font-weight:700;margin-top:8px">Descanso</p>':`<p style="font-size:20px;font-weight:700;margin-top:8px">${v.ini}–${v.fin}</p><span class="tag">${TURNO[v.t][0]} · ${hr(h)} h</span>`):'<p class="empty">Sin asignar</p>'}</div>`}).join('')}</div>`;
 },
 config(){
  setTimeout(cargaH,0);
@@ -358,8 +386,10 @@ function saveInc(id){
 }
 function delInc(id){if(!confirm('¿Eliminar esta incidencia?'))return;S.db.incs=S.db.incs.filter(x=>x.id!=id);save();closeM();render()}
 
-function setT(s,v){if(v)S.db.turnos[s]=v;else delete S.db.turnos[s];save();render()}
-function plan(){PLAN.forEach((v,i)=>S.db.turnos[iso(add(S.wk,i))]=v);save();render()}
+const mk=v=>v=='D'?{t:'D',ini:'',fin:''}:{t:v,ini:DEF[v][0],fin:DEF[v][1]};
+function setT(s,v){if(v)S.db.turnos[s]=mk(v);else delete S.db.turnos[s];save();render()}
+function setH(s,k,v){const x=tn(s);if(!x||!v)return;S.db.turnos[s]={...x,[k]:v};save();render()}
+function plan(){PLAN.forEach((v,i)=>S.db.turnos[iso(add(S.wk,i))]=mk(v));save();render()}
 function meta(){const v=+prompt('Meta de horas por semana',S.db.meta.metaH);if(v>0){S.db.meta.metaH=v;save();render()}}
 function csv(){
  const c=['cod','fecha','titulo','lugar','cat','prio','estado','min','sintoma','solucion'];
