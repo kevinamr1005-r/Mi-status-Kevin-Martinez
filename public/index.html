@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi Status Semanal</title>
+<style>
+:root{--bg:#eceff6;--card:#fff;--ink:#0f1b3d;--mut:#667090;--navy:#0f1b3d;--blue:#3a5bdc;--green:#14894a;--amber:#c76d05;--pink:#d1296f;--teal:#0d8f86;--line:#e1e5f0}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.45 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+aside{width:248px;flex:none;background:var(--navy);color:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{padding:0 8px 16px;border-bottom:1px solid #ffffff22;margin-bottom:12px}
+.brand small{display:block;font-size:12px;color:#aab4d6}
+.brand b{display:block;font-size:17px;margin-top:6px}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:none;border:0;color:#cdd4ee;text-align:left;width:100%}
+.nav:hover{background:#ffffff12}
+.nav.on{background:#ffffff1f;color:#fff;font-weight:600}
+.nav i{font-style:normal;font-size:12px;background:#ffffff26;border-radius:20px;padding:0 8px}
+.edit{margin-top:auto;border:1px solid #ffffff44;background:none;color:#fff;border-radius:10px;padding:9px}
+.edit.on{background:#fff;color:var(--navy);font-weight:600}
+main{flex:1;min-width:0;padding:28px 32px 40px;max-width:1280px}
+h1{font-size:28px;letter-spacing:-.4px}
+h2{font-size:17px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.sub{color:var(--mut);font-size:14px}
+.hero{background:var(--navy);color:#fff;border-radius:20px;padding:26px 28px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.hero h1{font-size:34px;margin:4px 0 14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:#ffffff1c;border-radius:20px;padding:5px 12px;font-size:13px}
+.wn{display:inline-flex;align-items:center;gap:4px;background:#ffffff1c;border-radius:12px;padding:4px}
+.top .wn{background:var(--card);border:1px solid var(--line)}
+.wn b{padding:0 10px;font-size:14px}
+.wn button{background:none;border:0;border-radius:8px;padding:6px 10px;color:inherit}
+.wn button:hover{background:#7f8fc830}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g7{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.kpi small{color:var(--mut)}
+.kpi strong{display:block;font-size:30px;line-height:1.1;margin:4px 0 8px}
+.kpi strong span{font-size:15px;color:var(--mut);font-weight:500}
+.pb{height:6px;background:var(--line);border-radius:6px;overflow:hidden}
+.pb div{height:100%;background:var(--c,var(--blue))}
+.bars{display:flex;align-items:flex-end;gap:10px;height:130px}
+.bars div{flex:1;text-align:center;font-size:12px;color:var(--mut);display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.bars i{display:block;background:var(--blue);border-radius:6px 6px 0 0;min-height:3px;margin-bottom:6px}
+.bars b{color:var(--ink)}
+.it{border-left:4px solid var(--c,#9aa3c4);background:#f6f7fb;border-radius:8px;padding:8px 30px 8px 10px;margin-top:8px;position:relative}
+.it b{display:block;font-weight:600}
+.it small{color:var(--mut)}
+.it.incidencia{--c:var(--pink);background:#fdf0f6}
+.it.capacitacion{--c:var(--blue);background:#eff2fd}
+.it.apoyo{--c:var(--teal);background:#ebf8f6}
+.it.nov{--c:#9aa3c4}
+.it[onclick]{cursor:pointer}
+.x{position:absolute;right:6px;top:6px;border:0;background:none;color:var(--mut);font-size:18px;line-height:1}
+.day h3{display:flex;justify-content:space-between;font-size:16px}
+.day.hoy{border:2px solid var(--blue)}
+.tag{font-size:12px;background:#e8edff;color:var(--blue);border-radius:20px;padding:1px 10px;display:inline-block;margin:4px 0}
+.empty{color:var(--mut);font-size:14px;margin-top:8px}
+.mini{border:1px dashed #b5bcd8;background:none;border-radius:8px;padding:5px 10px;font-size:13px;color:var(--mut);margin:8px 6px 0 0}
+.mini:hover{border-color:var(--blue);color:var(--blue)}
+.bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.bar input{flex:1;min-width:200px}
+input,select,textarea{border:1px solid #cdd3e6;border-radius:10px;padding:9px 12px;background:#fff;width:100%}
+.bar select{width:auto}
+.row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-left:4px solid var(--c);cursor:pointer}
+.row code{color:var(--mut);font-size:13px;width:74px;flex:none}
+.row div{flex:1;min-width:0}
+.row small{color:var(--mut)}
+.st{font-size:12px;border-radius:20px;padding:2px 10px;background:#eef0f6;white-space:nowrap}
+.st.Resuelta{background:#e3f6ea;color:var(--green)}
+.st.Escalada{background:#fde6e6;color:#c42b2b}
+.st.Abierta,.st.En\ proceso{background:#fff1da;color:var(--amber)}
+.P1{--c:#c42b2b}.P2{--c:var(--amber)}.P3{--c:#d9a200}.P4{--c:var(--teal)}
+.bk{position:fixed;inset:0;background:#0f1b3d99;display:grid;place-items:center;padding:16px;z-index:9}
+.md{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:520px;max-height:92vh;overflow:auto}
+.md label{display:block;font-size:13px;color:var(--mut);margin-top:12px}
+.md textarea{min-height:70px}
+.ac{display:flex;gap:8px;margin-top:18px}
+.ac button{border:1px solid #cdd3e6;background:#fff;border-radius:10px;padding:9px 16px}
+.ac .pr{background:var(--blue);border-color:var(--blue);color:#fff}
+.ac .dg{color:#c42b2b;margin-left:auto}
+.pcol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;z-index:10}
+#toast:empty{display:none}
+@media(max-width:820px){
+ body{flex-direction:column}
+ aside{position:fixed;bottom:0;top:auto;width:100%;height:auto;flex-direction:row;padding:6px;z-index:5;overflow-x:auto}
+ .brand,.nav i{display:none}
+ .nav{justify-content:center;padding:10px 8px;font-size:13px;white-space:nowrap}
+ .edit{margin:0;padding:6px 10px;white-space:nowrap}
+ main{padding:18px 14px 90px}
+ .hero h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+<aside id="side"></aside>
+<main id="main"></main>
+<div id="modal"></div>
+<div id="toast" role="status"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const MES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const TURNO={M:['Mañana','06:00–15:00'],T:['Tarde','15:00–00:00'],D:['Descanso','']};
+const PLAN=['M','T','M','M','T','T','D'];
+const TIPO={incidencia:'Incidencia',capacitacion:'Capacitación',apoyo:'Apoyo',otro:'Otro',nov:'Sin novedad'};
+const TIPO_A={capacitacion:'Capacitación',apoyo:'Apoyo',otro:'Otro'};
+const CAT={Hardware:'Hardware',Software:'Software',Red:'Red',Cuenta:'Cuenta o acceso',Otro:'Otro'};
+const PRIO={P1:'P1 · Crítica',P2:'P2 · Alta',P3:'P3 · Media',P4:'P4 · Baja'};
+const EST={Abierta:'Abierta','En proceso':'En proceso',Escalada:'Escalada',Resuelta:'Resuelta'};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const P=s=>new Date(s+'T00:00:00');
+const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const mon=d=>add(d,-((d.getDay()+6)%7));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const opts=(o,s)=>Object.entries(o).map(([k,v])=>`<option value="${k}" ${k==s?'selected':''}>${v}</option>`).join('');
+const corto=s=>{const d=P(s);return d.getDate()+' '+MES[d.getMonth()].slice(0,3)};
+
+let S={v:'resumen',wk:mon(new Date()),q:'',fe:'',fp:'',edit:!!sessionStorage.pin,api:0,
+ db:{meta:{nombre:'Michael Saravia',rol:'Soporte',metaH:44},turnos:{},acts:[],incs:[]}};
+
+async function load(){
+ try{const r=await fetch('/api/data');if(!r.ok)throw 0;const d=await r.json();S.api=1;if(d.acts)S.db=d}
+ catch(e){const l=localStorage.getItem('db');if(l)S.db=JSON.parse(l)}
+ render();
+}
+async function save(){
+ localStorage.setItem('db',JSON.stringify(S.db));
+ if(!S.api)return;
+ try{const r=await fetch('/api/data',{method:'POST',headers:{'x-pin':sessionStorage.pin||''},body:JSON.stringify(S.db)});if(!r.ok)throw 0}
+ catch(e){toast('No se guardó en el servidor. Revisa tu PIN y la conexión.')}
+}
+function toast(t){$('toast').textContent=t;setTimeout(()=>$('toast').textContent='',3500)}
+
+async function toggleEdit(){
+ if(S.edit){S.edit=false;delete sessionStorage.pin;return render()}
+ const p=prompt('PIN de edición');if(!p)return;
+ if(S.api){const r=await fetch('/api/login',{method:'POST',headers:{'x-pin':p}});if(!r.ok)return toast('PIN incorrecto')}
+ sessionStorage.pin=p;S.edit=true;render();
+}
+function go(v){S.v=v;render()}
+function wk(n){S.wk=n?add(S.wk,7*n):mon(new Date());render()}
+const wkNav=()=>{const a=S.wk,b=add(a,6);return `<div class="wn"><button onclick="wk(-1)" aria-label="Semana anterior">‹</button><b>${a.getDate()}–${b.getDate()} ${MES[b.getMonth()].slice(0,3)}</b><button onclick="wk(1)" aria-label="Semana siguiente">›</button><button onclick="wk(0)">Hoy</button></div>`};
+
+function items(s){
+ const a=S.db.acts.filter(x=>x.fecha==s);
+ const i=S.db.incs.filter(x=>x.fecha==s).map(x=>({...x,tipo:'incidencia',inc:1}));
+ return [...a,...i];
+}
+function stats(){
+ const days=[...Array(7)].map((_,i)=>iso(add(S.wk,i)));
+ const h=days.reduce((a,s)=>a+(S.db.turnos[s]=='M'||S.db.turnos[s]=='T'?9:0),0);
+ const incs=S.db.incs.filter(i=>days.includes(i.fecha));
+ const acts=S.db.acts.filter(a=>days.includes(a.fecha)&&a.tipo!='nov');
+ const cap=acts.filter(a=>a.tipo=='capacitacion').reduce((x,a)=>x+(+a.dur||0),0);
+ return {days,h,incs,acts,res:incs.filter(i=>i.estado=='Resuelta').length,cap};
+}
+const pct=(a,b)=>b?Math.min(100,Math.round(a/b*100)):0;
+const hrs=m=>m?(m/60).toFixed(m%60?1:0)+' h':'0 h';
+
+function item(it){
+ const click=it.inc?`incForm('${it.id}')`:`actForm('${it.fecha}','${it.id}')`;
+ return `<div class="it ${it.tipo}" onclick="${click}"><b>${esc(it.titulo)}</b><small>${TIPO[it.tipo]}${it.dur?' · '+it.dur+' min':''}</small></div>`;
+}
+
+const VIEWS={
+resumen(){
+ const t=stats(),hoy=iso(new Date()),n=new Date(),hh=n.getHours();
+ const sal=hh<12?'Buenos días':hh<19?'Buenas tardes':'Buenas noches';
+ const tr=S.db.turnos[hoy],mx=Math.max(1,...t.days.map(s=>items(s).filter(x=>x.tipo!='nov').length));
+ const pend=S.db.incs.filter(i=>i.estado!='Resuelta');
+ const hoyIt=items(hoy);
+ return `<div class="hero"><div><div class="sub" style="color:#aab4d6">${DIAS[(n.getDay()+6)%7]} ${n.getDate()} de ${MES[n.getMonth()]}</div>
+ <h1>${sal}, ${esc(S.db.meta.nombre.split(' ')[0])}</h1>
+ <div class="chips"><span class="chip">Turno de hoy: ${tr?TURNO[tr][0]+' '+TURNO[tr][1]:'sin asignar'}</span><span class="chip">${S.db.incs.length} incidencias en total</span></div></div>${wkNav()}</div>
+ <div class="grid g4">
+ <div class="card kpi"><small>Horas de la semana</small><strong>${t.h}<span> / ${S.db.meta.metaH} h</span></strong><div class="pb"><div style="width:${pct(t.h,S.db.meta.metaH)}%;--c:var(--amber)"></div></div></div>
+ <div class="card kpi"><small>Incidencias resueltas</small><strong>${t.res}<span> / ${t.incs.length}</span></strong><div class="pb"><div style="width:${pct(t.res,t.incs.length)}%;--c:var(--green)"></div></div></div>
+ <div class="card kpi"><small>Capacitación</small><strong>${hrs(t.cap)}</strong><div class="pb"><div style="width:${Math.min(100,t.cap/6)}%;--c:var(--blue)"></div></div></div>
+ <div class="card kpi"><small>Actividades registradas</small><strong>${t.acts.length+t.incs.length}</strong><div class="pb"><div style="width:${pct(t.acts.length+t.incs.length,10)}%;--c:var(--teal)"></div></div></div></div>
+ <div class="grid g2" style="margin-top:14px">
+ <div class="card"><h2>Actividades por día</h2><div class="bars">${t.days.map((s,i)=>{const c=items(s).filter(x=>x.tipo!='nov').length;return `<div><b>${c||''}</b><i style="height:${c/mx*80}%"></i>${DIAS[i].slice(0,3)}</div>`}).join('')}</div></div>
+ <div class="card"><h2>Hoy</h2>${hoyIt.length?hoyIt.map(item).join(''):`<p class="empty">Sin actividades hoy.${S.edit?' Agrégalas en Bitácora.':''}</p>`}</div></div>
+ <div class="card" style="margin-top:14px"><h2>Pendientes</h2>${pend.length?pend.map(i=>`<div class="it incidencia" onclick="incForm('${i.id}')"><b>${i.cod} · ${esc(i.titulo)}</b><small>${i.estado} · ${PRIO[i.prio]}</small></div>`).join(''):'<p class="empty">No hay incidencias abiertas.</p>'}</div>`;
+},
+bitacora(){
+ const hoy=iso(new Date());
+ return `<div class="top"><div><h1>Bitácora</h1><p class="sub">Todo lo que hiciste cada día de la semana.</p></div>${wkNav()}</div>
+ <div class="grid g7">${[...Array(7)].map((_,i)=>{const s=iso(add(S.wk,i)),tr=S.db.turnos[s],it=items(s);
+ return `<div class="card day ${s==hoy?'hoy':''}"><h3>${DIAS[i]}<span class="sub">${corto(s)}</span></h3>
+ ${tr?`<span class="tag">${TURNO[tr][0]} ${TURNO[tr][1]}</span>`:''}
+ ${it.length?it.map(item).join(''):`<p class="empty">${tr=='D'?'Descanso':'Sin actividades'}</p>`}
+ ${S.edit?`<button class="mini" onclick="actForm('${s}')">+ Actividad</button><button class="mini" onclick="incForm('','${s}')">+ Incidencia</button>${it.length?'':`<button class="mini" onclick="nov('${s}')">Día sin novedad</button>`}`:''}</div>`}).join('')}</div>`;
+},
+incs(){
+ return `<div class="top"><div><h1>Incidencias</h1><p class="sub">Historial con causa y solución, para consultarlo cuando se repita.</p></div>${S.edit?'<button class="mini" style="margin:0" onclick="incForm()">+ Nueva incidencia</button>':''}</div>
+ <div class="bar"><input id="q" placeholder="Buscar por código, lugar, síntoma o solución" value="${esc(S.q)}" oninput="S.q=this.value;lista()">
+ <select onchange="S.fe=this.value;lista()"><option value="">Todos los estados</option>${opts(EST,S.fe)}</select>
+ <select onchange="S.fp=this.value;lista()"><option value="">Todas las prioridades</option>${opts(PRIO,S.fp)}</select>
+ <button class="mini" style="margin:0" onclick="csv()">Exportar CSV</button></div><div id="il" class="grid"></div>`;
+},
+turnos(){
+ const t=stats(),m=S.db.meta.metaH,hoy=iso(new Date()),d=t.days.filter(s=>S.db.turnos[s]=='D').length;
+ return `<div class="top"><div><h1>Mis turnos</h1><p class="sub">Horas y descansos de la semana.</p></div>${wkNav()}</div>
+ <div class="grid g4" style="margin-bottom:14px">
+ <div class="card kpi"><small>Horas de la semana</small><strong>${t.h}<span> / ${m} h</span></strong><div class="pb"><div style="width:${pct(t.h,m)}%;--c:var(--amber)"></div></div><small>${t.h>=m?(t.h-m)+' h sobre la meta':(m-t.h)+' h para la meta'}</small>${S.edit?' <button class="mini" style="margin:6px 0 0" onclick="meta()">Cambiar meta</button>':''}</div>
+ <div class="card kpi"><small>Días trabajados</small><strong>${t.days.filter(s=>['M','T'].includes(S.db.turnos[s])).length}<span> días</span></strong></div>
+ <div class="card kpi"><small>Descansos</small><strong>${d}<span> días</span></strong></div></div>
+ ${S.edit?'<button class="mini" style="margin:0 0 14px" onclick="plan()">Aplicar mi rotación a esta semana</button>':''}
+ <div class="grid g7">${t.days.map((s,i)=>{const tr=S.db.turnos[s];
+ return `<div class="card day ${s==hoy?'hoy':''}"><h3>${DIAS[i]}<span class="sub">${corto(s)}</span></h3>
+ ${S.edit?`<select onchange="setT('${s}',this.value)"><option value="">Sin asignar</option>${opts({M:'Mañana 06:00–15:00',T:'Tarde 15:00–00:00',D:'Descanso'},tr)}</select>`:
+ tr?`<p style="font-size:20px;font-weight:700;margin-top:8px">${tr=='D'?'Descanso':TURNO[tr][1]}</p><span class="tag">${TURNO[tr][0]}${tr!='D'?' · 9 h':''}</span>`:'<p class="empty">Sin asignar</p>'}</div>`}).join('')}</div>`;
+}};
+
+function lista(){
+ const q=S.q.toLowerCase();
+ const l=S.db.incs.filter(i=>(!S.fe||i.estado==S.fe)&&(!S.fp||i.prio==S.fp)&&(!q||[i.cod,i.titulo,i.lugar,i.sintoma,i.solucion].join(' ').toLowerCase().includes(q))).sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.cod.localeCompare(a.cod));
+ $('il').innerHTML=l.length?l.map(i=>`<div class="card row ${i.prio}" onclick="incForm('${i.id}')"><code>${i.cod}</code><div><b>${esc(i.titulo)}</b><br><small>${corto(i.fecha)} · ${esc(i.lugar||'Sin lugar')} · ${CAT[i.cat]||i.cat}${i.min?' · '+i.min+' min':''}</small></div><span class="st">${i.prio}</span><span class="st ${i.estado}">${i.estado}</span></div>`).join(''):'<p class="empty">No hay incidencias con esos filtros.</p>';
+}
+
+function modal(h){$('modal').innerHTML=`<div class="bk" onclick="if(event.target==this)closeM()"><form class="md" onsubmit="return false">${h}</form></div>`}
+function closeM(){$('modal').innerHTML=''}
+const ro=()=>S.edit?'':'disabled';
+
+function actForm(f,id){
+ const a=S.db.acts.find(x=>x.id==id)||{fecha:f,tipo:'capacitacion',titulo:'',dur:60,nota:''};
+ modal(`<h2>${id?'Actividad':'Nueva actividad'}</h2>
+ <label>Tipo<select id="f_tipo" ${ro()}>${opts(TIPO_A,a.tipo)}</select></label>
+ <label>Título<input id="f_t" value="${esc(a.titulo)}" ${ro()}></label>
+ <div class="pcol"><label>Fecha<input type="date" id="f_f" value="${a.fecha}" ${ro()}></label><label>Duración (min)<input type="number" id="f_d" value="${a.dur||''}" ${ro()}></label></div>
+ <label>Notas<textarea id="f_n" ${ro()}>${esc(a.nota)}</textarea></label>
+ <div class="ac">${S.edit?`<button class="pr" onclick="saveAct('${id||''}')">Guardar</button>`:''}<button onclick="closeM()">Cerrar</button>${S.edit&&id?`<button class="dg" onclick="delAct('${id}')">Eliminar</button>`:''}</div>`);
+}
+function saveAct(id){
+ const o={tipo:$('f_tipo').value,titulo:$('f_t').value.trim(),fecha:$('f_f').value,dur:+$('f_d').value||0,nota:$('f_n').value.trim()};
+ if(!o.titulo||!o.fecha)return toast('Escribe un título y una fecha');
+ if(id)Object.assign(S.db.acts.find(x=>x.id==id),o);else S.db.acts.push({id:uid(),...o});
+ save();closeM();render();
+}
+function delAct(id){if(!confirm('¿Eliminar esta actividad?'))return;S.db.acts=S.db.acts.filter(x=>x.id!=id);save();closeM();render()}
+function nov(s){S.db.acts.push({id:uid(),tipo:'nov',titulo:'Día sin novedad',fecha:s,dur:0,nota:''});save();render()}
+
+function incForm(id,f){
+ const i=S.db.incs.find(x=>x.id==id)||{fecha:f||iso(new Date()),titulo:'',lugar:'',cat:'Hardware',prio:'P3',estado:'Abierta',sintoma:'',solucion:'',min:''};
+ modal(`<h2>${id?i.cod:'Nueva incidencia'}</h2>
+ <label>Título<input id="i_t" value="${esc(i.titulo)}" ${ro()}></label>
+ <div class="pcol"><label>Fecha<input type="date" id="i_f" value="${i.fecha}" ${ro()}></label><label>Lugar<input id="i_l" value="${esc(i.lugar)}" ${ro()}></label>
+ <label>Categoría<select id="i_c" ${ro()}>${opts(CAT,i.cat)}</select></label><label>Prioridad<select id="i_p" ${ro()}>${opts(PRIO,i.prio)}</select></label>
+ <label>Estado<select id="i_e" ${ro()}>${opts(EST,i.estado)}</select></label><label>Tiempo de solución (min)<input type="number" id="i_m" value="${i.min||''}" ${ro()}></label></div>
+ <label>Síntoma<textarea id="i_s" ${ro()}>${esc(i.sintoma)}</textarea></label>
+ <label>Solución<textarea id="i_o" ${ro()}>${esc(i.solucion)}</textarea></label>
+ <div class="ac">${S.edit?`<button class="pr" onclick="saveInc('${id||''}')">Guardar</button>`:''}<button onclick="closeM()">Cerrar</button>${S.edit&&id?`<button class="dg" onclick="delInc('${id}')">Eliminar</button>`:''}</div>`);
+}
+function saveInc(id){
+ const o={titulo:$('i_t').value.trim(),fecha:$('i_f').value,lugar:$('i_l').value.trim(),cat:$('i_c').value,prio:$('i_p').value,estado:$('i_e').value,min:+$('i_m').value||0,sintoma:$('i_s').value.trim(),solucion:$('i_o').value.trim()};
+ if(!o.titulo||!o.fecha)return toast('Escribe un título y una fecha');
+ if(id)Object.assign(S.db.incs.find(x=>x.id==id),o);
+ else{const n=Math.max(1000,...S.db.incs.map(x=>+x.cod.slice(4)))+1;S.db.incs.push({id:uid(),cod:'INC-'+n,...o})}
+ save();closeM();render();
+}
+function delInc(id){if(!confirm('¿Eliminar esta incidencia?'))return;S.db.incs=S.db.incs.filter(x=>x.id!=id);save();closeM();render()}
+
+function setT(s,v){if(v)S.db.turnos[s]=v;else delete S.db.turnos[s];save();render()}
+function plan(){PLAN.forEach((v,i)=>S.db.turnos[iso(add(S.wk,i))]=v);save();render()}
+function meta(){const v=+prompt('Meta de horas por semana',S.db.meta.metaH);if(v>0){S.db.meta.metaH=v;save();render()}}
+function csv(){
+ const c=['cod','fecha','titulo','lugar','cat','prio','estado','min','sintoma','solucion'];
+ const t=[c.join(','),...S.db.incs.map(i=>c.map(k=>'"'+String(i[k]??'').replace(/"/g,'""')+'"').join(','))].join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+t],{type:'text/csv'}));a.download='incidencias.csv';a.click();
+}
+
+function render(){
+ const N=[['resumen','Resumen'],['bitacora','Bitácora'],['incs','Incidencias'],['turnos','Mis turnos']];
+ const cnt={incs:S.db.incs.length};
+ $('side').innerHTML=`<div class="brand"><small>Ministerio de Educación</small><b>${esc(S.db.meta.nombre)}</b><small>${esc(S.db.meta.rol)}</small></div>`+
+ N.map(([k,t])=>`<button class="nav ${S.v==k?'on':''}" onclick="go('${k}')">${t}${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`).join('')+
+ `<button class="edit ${S.edit?'on':''}" onclick="toggleEdit()">${S.edit?'Salir de edición':'Modo edición'}</button>`;
+ $('main').innerHTML=VIEWS[S.v]();
+ if(S.v=='incs')lista();
+}
+load();
+</script>
+</body>
+</html>
