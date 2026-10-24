@@ -87,6 +87,7 @@ input,select,textarea{border:1px solid #cdd3e6;border-radius:10px;padding:9px 12
 .ac .dg{color:#c42b2b;margin-left:auto}
 .pcol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .md:has(.lg){max-width:380px}.lg{text-align:center}.lg .lk{width:56px;height:56px;border-radius:50%;background:#e8edff;color:var(--blue);display:grid;place-items:center;margin:0 auto 14px}.lg input{text-align:center;font-size:22px;letter-spacing:6px;margin-top:18px}.lg .ac{justify-content:center}.pe{color:#c42b2b;font-size:13px;min-height:18px;margin-top:8px}
+.edit+.edit{margin-top:8px}.big{width:100%;margin-top:16px;padding:12px;border-radius:10px;border:0;background:var(--blue);color:#fff;font-weight:600}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;z-index:10}
 #toast:empty{display:none}
 @media(max-width:820px){
@@ -94,7 +95,7 @@ input,select,textarea{border:1px solid #cdd3e6;border-radius:10px;padding:9px 12
  aside{position:fixed;bottom:0;top:auto;width:100%;height:auto;flex-direction:row;padding:6px;z-index:5;overflow-x:auto}
  .brand,.nav i{display:none}
  .nav{justify-content:center;padding:10px 8px;font-size:13px;white-space:nowrap}
- .edit{margin:0;padding:6px 10px;white-space:nowrap}
+ .edit{margin:0;padding:6px 10px;white-space:nowrap}.edit+.edit{margin:0}
  main{padding:18px 14px 90px}
  .hero h1{font-size:26px}
 }
@@ -126,30 +127,56 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const opts=(o,s)=>Object.entries(o).map(([k,v])=>`<option value="${k}" ${k==s?'selected':''}>${v}</option>`).join('');
 const corto=s=>{const d=P(s);return d.getDate()+' '+MES[d.getMonth()].slice(0,3)};
 
-let S={v:'resumen',wk:mon(new Date()),q:'',fe:'',fp:'',edit:!!sessionStorage.pin,api:0,
+let S={v:'resumen',wk:mon(new Date()),q:'',fe:'',fp:'',edit:!!(sessionStorage.pin||sessionStorage.tok),huella:0,api:0,
  db:{meta:{nombre:'Kevin Martinez',rol:'Soporte',metaH:44},turnos:{},acts:[],incs:[]}};
 
 async function load(){
- try{const r=await fetch('/api/data');if(!r.ok)throw 0;const d=await r.json();S.api=1;if(d.acts)S.db=d;if(S.db.meta.nombre=='Michael Saravia')S.db.meta.nombre='Kevin Martinez'}
+ try{const r=await fetch('/api/data');if(!r.ok)throw 0;const d=await r.json();S.api=1;fetch('/api/huella').then(r=>r.json()).then(j=>{S.huella=j.registrada;render()}).catch(()=>{});if(d.acts)S.db=d;if(S.db.meta.nombre=='Michael Saravia')S.db.meta.nombre='Kevin Martinez'}
  catch(e){const l=localStorage.getItem('db');if(l)S.db=JSON.parse(l)}
  render();
 }
 async function save(){
  localStorage.setItem('db',JSON.stringify(S.db));
  if(!S.api)return;
- try{const r=await fetch('/api/data',{method:'POST',headers:{'x-pin':sessionStorage.pin||''},body:JSON.stringify(S.db)});if(!r.ok)throw 0}
+ try{const r=await fetch('/api/data',{method:'POST',headers:hd(),body:JSON.stringify(S.db)});if(!r.ok)throw 0}
  catch(e){toast('No se guardó en el servidor. Revisa tu PIN y la conexión.')}
 }
 function toast(t){$('toast').textContent=t;setTimeout(()=>$('toast').textContent='',3500)}
 
+const hd=()=>({'x-pin':sessionStorage.pin||'','x-token':sessionStorage.tok||''});
+const b2u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+const u2b=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
 function toggleEdit(){
- if(S.edit){S.edit=false;delete sessionStorage.pin;return render()}
+ if(S.edit){S.edit=false;delete sessionStorage.pin;delete sessionStorage.tok;return render()}
+ const h=S.huella&&window.PublicKeyCredential;
  modal(`<div class="lg"><div class="lk"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
- <h2>Modo edición</h2><p class="sub">Escribe tu PIN para agregar o editar.</p>
+ <h2>Modo edición</h2><p class="sub">${h?'Usa tu huella o escribe tu PIN.':'Escribe tu PIN para agregar o editar.'}</p>
+ ${h?'<button type="button" class="big" onclick="huellaEntrar()">Entrar con huella</button><p class="sub" style="margin-top:14px">o con tu PIN</p>':''}
  <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" aria-label="PIN de edición">
  <p id="pe" class="pe" role="alert"></p>
  <div class="ac"><button class="pr" onclick="login()">Entrar</button><button onclick="closeM()">Cancelar</button></div></div>`);
- const i=$('pin');i.focus();i.onkeydown=e=>{if(e.key=='Enter')login()};
+ const i=$('pin');i.onkeydown=e=>{if(e.key=='Enter')login()};
+ if(h)huellaEntrar();else i.focus();
+}
+async function huellaEntrar(){
+ try{
+  const r0=await fetch('/api/auth-options',{method:'POST'});if(!r0.ok)throw 0;
+  const o=await r0.json();o.challenge=u2b(o.challenge);(o.allowCredentials||[]).forEach(c=>c.id=u2b(c.id));
+  const a=await navigator.credentials.get({publicKey:o}),R=a.response;
+  const body={id:a.id,rawId:b2u(a.rawId),type:a.type,clientExtensionResults:{},response:{clientDataJSON:b2u(R.clientDataJSON),authenticatorData:b2u(R.authenticatorData),signature:b2u(R.signature),userHandle:R.userHandle?b2u(R.userHandle):undefined}};
+  const r=await fetch('/api/auth-verify',{method:'POST',body:JSON.stringify(body)});if(!r.ok)throw 0;
+  sessionStorage.tok=(await r.json()).token;S.edit=true;closeM();render();
+ }catch(e){const p=$('pe');if(p){p.textContent='No se pudo usar la huella. Escribe tu PIN.';$('pin').focus()}}
+}
+async function huellaRegistrar(){
+ try{
+  const r0=await fetch('/api/reg-options',{method:'POST',headers:hd()});if(!r0.ok)throw 0;
+  const o=await r0.json();o.challenge=u2b(o.challenge);o.user.id=u2b(o.user.id);(o.excludeCredentials||[]).forEach(c=>c.id=u2b(c.id));
+  const c=await navigator.credentials.create({publicKey:o}),R=c.response;
+  const body={id:c.id,rawId:b2u(c.rawId),type:c.type,clientExtensionResults:{},response:{clientDataJSON:b2u(R.clientDataJSON),attestationObject:b2u(R.attestationObject),transports:R.getTransports?R.getTransports():[]}};
+  const r=await fetch('/api/reg-verify',{method:'POST',headers:hd(),body:JSON.stringify(body)});if(!r.ok)throw 0;
+  S.huella=1;render();toast('Huella activada en este equipo');
+ }catch(e){toast(e&&e.name=='InvalidStateError'?'Este equipo ya tiene la huella activada':'No se pudo activar la huella')}
 }
 async function login(){
  const p=$('pin').value.trim();if(!p)return;
@@ -296,7 +323,7 @@ function render(){
  const cnt={incs:S.db.incs.length};
  $('side').innerHTML=`<div class="brand"><small>Ministerio de Educación</small><b>${esc(S.db.meta.nombre)}</b><small>${esc(S.db.meta.rol)}</small></div>`+
  N.map(([k,t])=>`<button class="nav ${S.v==k?'on':''}" onclick="go('${k}')">${t}${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`).join('')+
- `<button class="edit ${S.edit?'on':''}" onclick="toggleEdit()">${S.edit?'Salir de edición':'Modo edición'}</button>`;
+ `<button class="edit ${S.edit?'on':''}" onclick="toggleEdit()">${S.edit?'Salir de edición':'Modo edición'}</button>`+(S.edit&&!S.huella&&window.PublicKeyCredential&&S.api?'<button class="edit" onclick="huellaRegistrar()">Activar huella</button>':'');
  $('main').innerHTML=VIEWS[S.v]();
  if(S.v=='incs')lista();
 }

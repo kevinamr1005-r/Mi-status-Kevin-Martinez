@@ -2,5 +2,8 @@
   "name": "mi-status-semanal",
   "private": true,
   "type": "module",
-  "dependencies": { "@netlify/blobs": "^8.1.0" }
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "@simplewebauthn/server": "^13.1.0"
+  }
 }
