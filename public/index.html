@@ -86,6 +86,7 @@ input,select,textarea{border:1px solid #cdd3e6;border-radius:10px;padding:9px 12
 .ac .pr{background:var(--blue);border-color:var(--blue);color:#fff}
 .ac .dg{color:#c42b2b;margin-left:auto}
 .pcol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.md:has(.lg){max-width:380px}.lg{text-align:center}.lg .lk{width:56px;height:56px;border-radius:50%;background:#e8edff;color:var(--blue);display:grid;place-items:center;margin:0 auto 14px}.lg input{text-align:center;font-size:22px;letter-spacing:6px;margin-top:18px}.lg .ac{justify-content:center}.pe{color:#c42b2b;font-size:13px;min-height:18px;margin-top:8px}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;z-index:10}
 #toast:empty{display:none}
 @media(max-width:820px){
@@ -126,10 +127,10 @@ const opts=(o,s)=>Object.entries(o).map(([k,v])=>`<option value="${k}" ${k==s?'s
 const corto=s=>{const d=P(s);return d.getDate()+' '+MES[d.getMonth()].slice(0,3)};
 
 let S={v:'resumen',wk:mon(new Date()),q:'',fe:'',fp:'',edit:!!sessionStorage.pin,api:0,
- db:{meta:{nombre:'Michael Saravia',rol:'Soporte',metaH:44},turnos:{},acts:[],incs:[]}};
+ db:{meta:{nombre:'Kevin Martinez',rol:'Soporte',metaH:44},turnos:{},acts:[],incs:[]}};
 
 async function load(){
- try{const r=await fetch('/api/data');if(!r.ok)throw 0;const d=await r.json();S.api=1;if(d.acts)S.db=d}
+ try{const r=await fetch('/api/data');if(!r.ok)throw 0;const d=await r.json();S.api=1;if(d.acts)S.db=d;if(S.db.meta.nombre=='Michael Saravia')S.db.meta.nombre='Kevin Martinez'}
  catch(e){const l=localStorage.getItem('db');if(l)S.db=JSON.parse(l)}
  render();
 }
@@ -141,11 +142,22 @@ async function save(){
 }
 function toast(t){$('toast').textContent=t;setTimeout(()=>$('toast').textContent='',3500)}
 
-async function toggleEdit(){
+function toggleEdit(){
  if(S.edit){S.edit=false;delete sessionStorage.pin;return render()}
- const p=prompt('PIN de edición');if(!p)return;
- if(S.api){const r=await fetch('/api/login',{method:'POST',headers:{'x-pin':p}});if(!r.ok)return toast('PIN incorrecto')}
- sessionStorage.pin=p;S.edit=true;render();
+ modal(`<div class="lg"><div class="lk"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+ <h2>Modo edición</h2><p class="sub">Escribe tu PIN para agregar o editar.</p>
+ <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" aria-label="PIN de edición">
+ <p id="pe" class="pe" role="alert"></p>
+ <div class="ac"><button class="pr" onclick="login()">Entrar</button><button onclick="closeM()">Cancelar</button></div></div>`);
+ const i=$('pin');i.focus();i.onkeydown=e=>{if(e.key=='Enter')login()};
+}
+async function login(){
+ const p=$('pin').value.trim();if(!p)return;
+ if(S.api){
+  const r=await fetch('/api/login',{method:'POST',headers:{'x-pin':p}});
+  if(!r.ok){$('pe').textContent='PIN incorrecto. Inténtalo de nuevo.';$('pin').select();return}
+ }
+ sessionStorage.pin=p;S.edit=true;closeM();render();
 }
 function go(v){S.v=v;render()}
 function wk(n){S.wk=n?add(S.wk,7*n):mon(new Date());render()}
